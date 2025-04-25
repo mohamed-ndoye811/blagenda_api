@@ -3,7 +3,9 @@ import { AuthService } from "./auth.service";
 import { RegisterDTO } from "./dto/register.dto";
 import { LocalAuthGuard } from "./guards/local.guard";
 import { Public } from "src/public/public.decorator";
+import { ApiBearerAuth, ApiOperation, ApiResponse } from "@nestjs/swagger";
 
+@ApiBearerAuth()
 @Controller("auth")
 export class AuthController {
 	constructor(private service: AuthService) {}
@@ -27,6 +29,7 @@ export class AuthController {
 	}
 
     @Get("me")
+    @ApiResponse({ status: 403, description: 'Forbidden.' })
     me(@Request() req: any) {
         return req.user;
     }
