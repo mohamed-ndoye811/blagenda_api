@@ -15,6 +15,7 @@ export class AuthController {
         return req.user;
     }
 
+    @Public()
 	@Post("register")
 	async register(@Body() dto: RegisterDTO) {
 		return await this.service.register(dto);
