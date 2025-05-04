@@ -8,9 +8,200 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+    ADMIN
+    USER
+    MANAGER
+}
+
 model User {
-    id       String  @id @default(uuid())
-    email    String  @unique
-    password String
-    hashedRt String?
+    id String @id @default(uuid())
+
+    email              String    @unique
+    password           String
+    hashedRT           String?
+    firstname          String    @db.VarChar(255)
+    lastname           String    @db.VarChar(255)
+    username           String?   @db.VarChar(75)
+    avatarURL          String?
+    role               UserRole? @default(USER)
+    verified           Boolean?  @default(false)
+    resetPasswordToken String?
+
+    FieldValue   FieldValue[]
+    Registration Registration[]
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime? @updatedAt
+
+    @@map("users")
+}
+
+enum StatusType {
+    PENDING
+    CONFIRMED
+    CANCELED
+}
+
+model Registration {
+    id String @id @default(uuid())
+
+    status StatusType
+
+    eventId String
+    userId  String
+
+    event Event @relation(fields: [eventId], references: [id])
+    user  User  @relation(fields: [userId], references: [id])
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime? @updatedAt
+
+    @@map("registrations")
+}
+
+model Theme {
+    id String @id @default(uuid())
+
+    primaryColor   String @db.VarChar(7)
+    secondaryColor String @db.VarChar(7)
+    accentColor    String @db.VarChar(7)
+    logoURL        String
+    font           String
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime? @updatedAt
+
+    @@map("themes")
+}
+
+model Event {
+    id String @id @default(uuid())
+
+    title               String
+    type                Int
+    description         String?
+    start               DateTime
+    end                 DateTime
+    price               Decimal? @db.Decimal(10, 2)
+    maxParticipants     Int
+    isOnline            Boolean? @default(false)
+    isEquipmentRequired Boolean? @default(false)
+
+    equipments    EventEquipment[]
+    registrations Registration[]
+    fields        Field[]
+    eventType     EventType        @relation(fields: [type], references: [id])
+
+    createdAt DateTime? @default(now())
+    updatedAt DateTime? @updatedAt
+
+    @@map("events")
+}
+
+model EventType {
+    id Int @id @default(autoincrement())
+
+    name       String
+    isEditable Boolean? @default(true)
+    Event      Event[]
+
+    @@map("event_types")
+}
+
+model EventEquipment {
+    id String @id @default(uuid())
+
+    quantity          Int
+    maxPerParticipant Int? @default(1)
+    lowStockValue     Int
+
+    eventId     String
+    equipmentId String
+
+    event     Event     @relation(fields: [eventId], references: [id])
+    equipment Equipment @relation(fields: [equipmentId], references: [id])
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime? @updatedAt
+
+    @@map("event_equipments")
+}
+
+model Equipment {
+    id String @id @default(uuid())
+
+    name        String
+    description String   @db.Text
+    images      String[] @default([])
+
+    eventEquipment EventEquipment[]
+    fields         Field[]
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime? @updatedAt
+
+    @@map("equipments")
+}
+
+enum FieldType {
+    TEXT
+    NUMBER
+    SELECT
+    DATE
+    CHECKBOX
+    TEXTAREA
+}
+
+model Field {
+    id String @id @default(uuid())
+
+    name                 String
+    label                String
+    type                 FieldType
+    required             Boolean   @default(false)
+    options              Json      @db.JsonB
+    order                Int
+    visibilityConditions Json      @db.JsonB
+    targetId             String
+
+    // Fine tuning for types
+    min         Float?
+    max         Float?
+    multiple    Boolean  @default(false)
+    step        Float?
+    placeholder String?
+    resizeable  Boolean? @default(false)
+    columns     Int?
+    rows        Int?
+
+    eventId String
+
+    event      Event        @relation(fields: [eventId], references: [id])
+    FieldValue FieldValue[]
+
+    createdAt        DateTime   @default(now())
+    updatedAt        DateTime?  @updatedAt
+    eventEquipmentId String?
+    Equipment        Equipment? @relation(fields: [equipmentId], references: [id])
+    equipmentId      String?
+
+    @@map("fields")
+}
+
+model FieldValue {
+    id String @id @default(uuid())
+
+    value String
+
+    fieldId String
+    userId  String
+
+    field Field @relation(fields: [fieldId], references: [id])
+    user  User  @relation(fields: [userId], references: [id])
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime? @updatedAt
+
+    @@map("field_values")
 }

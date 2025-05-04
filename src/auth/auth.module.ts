@@ -18,7 +18,7 @@ import { APP_GUARD } from "@nestjs/core";
 				return {
 					secret: config.get("JWT_SECRET"),
 					signOptions: {
-						expiresIn: "15m",
+						expiresIn: "15h",
 					},
 				};
 			},

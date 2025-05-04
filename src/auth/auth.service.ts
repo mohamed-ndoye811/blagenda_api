@@ -3,16 +3,15 @@ import {
 	Injectable,
 	NotImplementedException,
 	UnauthorizedException,
-} from "@nestjs/common";
-import { RegisterDTO } from "./dto/register.dto";
-import { PrismaService } from "src/prisma/prisma.service";
-import * as argon from "argon2";
-import { instanceToPlain, plainToInstance } from "class-transformer";
-import { User } from "src/user/entities/user.entity";
-import { PrismaClientKnownRequestError } from "generated/prisma/runtime/library";
-import { LoginDTO } from "./dto/login.dto";
-import { JwtService } from "@nestjs/jwt";
-import { ConfigService } from "@nestjs/config";
+} from '@nestjs/common';
+import { RegisterDTO } from './dto/register.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import * as argon from 'argon2';
+import { instanceToPlain, plainToInstance } from 'class-transformer';
+import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
+import { LoginDTO } from './dto/login.dto';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -30,16 +29,16 @@ export class AuthService {
 		});
 
 		if (!user) {
-			throw new UnauthorizedException("Invalid credentials");
+			throw new UnauthorizedException('Invalid credentials');
 		}
 
 		const isPassValid = await argon.verify(user.password, dto.password);
 
 		if (!isPassValid) {
-			throw new UnauthorizedException("Invalid registration credentials");
+			throw new UnauthorizedException('Invalid registration credentials');
 		}
 
-		return new NotImplementedException();
+		return new UnauthorizedException();
 	}
 
 	async register(dto: RegisterDTO) {
@@ -50,16 +49,21 @@ export class AuthService {
 				data: {
 					email: dto.email,
 					password: hashedPassword,
+					username: dto.username,
+					firstname: dto.firstname,
+					lastname: dto.lastname,
 				},
 			});
 
-			return plainToInstance(User, newUser, {
+			return plainToInstance(RegisterDTO, newUser, {
 				excludeExtraneousValues: true,
 			});
 		} catch (err) {
 			if (err instanceof PrismaClientKnownRequestError) {
-				if (err.code === "P2002") {
-					throw new ConflictException("Invalid registration credentials");
+				if (err.code === 'P2002') {
+					throw new ConflictException(
+						'Invalid registration credentials',
+					);
 				}
 			}
 		}
@@ -80,18 +84,23 @@ export class AuthService {
 			},
 		});
 
-		if (!user) throw new UnauthorizedException("Incorrect credentials");
+		if (!user) throw new UnauthorizedException('Incorrect credentials');
 
 		const isPasswValid = await argon.verify(user.password, password);
 
-		if (!isPasswValid) throw new UnauthorizedException("Incorrect credentials");
+		if (!isPasswValid)
+			throw new UnauthorizedException('Incorrect credentials');
 
 		const payload = instanceToPlain(
-			plainToInstance(User, user, { excludeExtraneousValues: true }),
+			plainToInstance(RegisterDTO, user, {
+				excludeExtraneousValues: true,
+			}),
 		);
 
-		return this.jwt.sign(payload, {
-			secret: this.config.get("JWT_SECRET"),
-		});
+		return {
+			token: this.jwt.sign(payload, {
+				secret: this.config.get('JWT_SECRET'),
+			}),
+		};
 	}
 }

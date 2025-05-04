@@ -3,7 +3,8 @@ import { AuthService } from "./auth.service";
 import { RegisterDTO } from "./dto/register.dto";
 import { LocalAuthGuard } from "./guards/local.guard";
 import { Public } from "src/public/public.decorator";
-import { ApiBearerAuth, ApiOperation, ApiResponse } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiResponse } from "@nestjs/swagger";
+import { LoginDTO } from "./dto/login.dto";
 
 @ApiBearerAuth()
 @Controller("auth")
@@ -12,14 +13,17 @@ export class AuthController {
 
     @Public()
     @UseGuards(LocalAuthGuard)
-	@Post("login")  
-    async login(@Request() req: any) {
+	@Post("login")
+    @ApiResponse({ status: 201, description: 'Successfully logged in' })
+    @ApiResponse({ status: 403, description: 'Forbidden.'})
+    async login(@Request() req: any, @Body() dto: LoginDTO) {
         return req.user;
     }
 
     @Public()
 	@Post("register")
-	async register(@Body() dto: RegisterDTO) {
+    @ApiResponse({ status: 201, description: 'The record has been successfully created.'})
+    async register(@Body() dto: RegisterDTO) {
 		return await this.service.register(dto);
 	}
 
